@@ -1,0 +1,224 @@
+--1.Escribe la sentencia SQL para obtener el nombre de todos los productos (products)
+que vende nuestra Empresa:
+
+SELECT name
+FROM products;
+
+--2.Obtener los nombres y el precio unitario de los productos (products).
+
+SELECT name, unit_price
+FROM products;
+
+--3. El jefe de compras quiere saber el identificador (id), el nombre y el precio (unitario) de
+los productos que tienen un precio inferior o igual a 10,00€.
+
+SELECT product_id, name
+FROM products
+WHERE unit_price <= 10;
+
+--4. El jefe de compras quiere saber el id, el nombre y el precio de los productos que tienen
+un valor entre 2,00€ y 99,00€ ambas cantidades incluidas. Escribir 2 sentencias: una
+usando AND y otra usando BETWEEN.
+
+SELECT product_id, name, unit_price
+FROM products
+WHERE unit_price >= 2.00 AND unit_price <=99.00;
+
+SELECT product_id, name, unit_price
+FROM products
+WHERE unit_price BETWEEN 2.00 AND 99.00;
+
+--5. Obtener el nombre, el precio, y el precio en dólares ($) de todos los productos,
+sabiendo que el precio guardado en la tabla está en euros (€) y que el tipo de cambio está
+en: un dólar $1,0 equivale a 0,88€.
+
+SELECT name, unit_price, unit_price/0.88 as 'precio_dolar'
+FROM products;
+
+--6. Obtener el número de productos cuyo precio sea mayor o igual a 3,00€.
+
+SELECT COUNT(name)
+FROM  products
+WHERE unit_price>=3.00;
+
+--7. Obtener el nombre y el precio de los productos cuyo precio sea mayor o igual a 3,00€ y
+ordenarlos descendentemente por precio y ascendentemente por nombre.
+
+SELECT name, unit_price
+FROM  products
+WHERE unit_price>=3.00
+ORDER BY unit_price DESC, name ASC;
+
+--8. Obtener todos los productos que estén incluidos en una orden de compra (a través de
+la tabla order_items), incluyendo todos los datos del producto, y el identificador de la orden
+en el que está incluido. Usa primero inner join explícito y luego implícito.
+
+SELECT p.name,p.unit_price, o.quantity as "order_quantity", p.product_id, o.order_id
+FROM products p
+JOIN order_items o on p.product_id = o.product_id;
+
+SELECT p.name,p.unit_price, o.quantity as "order_quantity", p.product_id, o.order_id
+FROM products p
+JOIN order_items o WHERE p.product_id = o.product_id;
+
+--9. Obtener los clientes (customers) que hayan nacido después de 1973 y que tengan
+más de 200 puntos.
+
+SELECT *
+FROM customers
+WHERE birth_date > '1973-12-31' AND points> 200;
+
+-- 10. Obtener los clientes (customers) que hayan nacido en el estado de Texas (TX),
+Florida (FL) o Illinois (IL)
+
+SELECT*
+FROM clients
+WHERE state IN ('TX','FL','IL');
+
+-- 11. Obtener los productos cuyo precio unitario esté entre 3,00€ y 29,99€
+
+SELECT*
+FROM products
+WHERE unit_price BETWEEN 3.00 AND 29.99;
+
+-- 12. Obtener los transportistas (shippers) que contengan “ett” o “att” en el nombre. Escribir
+dos sentencias, una usando LIKE y la otra con REGEXP
+
+SELECT *
+FROM shippers
+WHERE name REGEXP 'ett|att'
+
+
+-- 13. Obtener los transportistas cuyo nombre acabe en “LLC"
+
+SELECT *
+FROM shippers
+WHERE name LIKE '%LLC'
+
+SELECT *
+FROM shippers
+WHERE name REGEXP 'LLC$'
+
+-- 14. Obtener el id, fecha de la orden, y comentario de las órdenes de compra (orders) que
+tengan comentarios, que el jefe de compras las quiere revisar. 
+
+SELECT o.order_id, order_date, comments
+FROM orders o
+JOIN order_items oi
+WHERE comments IS NOT NULL;
+
+-- 15 Obtener las órdenes de compra a partir del 2019 en adelante, que no tengan
+comentarios, ordenadas por fecha de manera descendente (la última orden de compra
+saldrá la primera).
+
+SELECT*
+FROM orders o
+JOIN order_items oi ON o.order_id = oi.order_id
+WHERE order_date >= '2019-01-01' AND comments IS NULL
+ORDER BY o.order_date DESC;
+
+
+--16. Si un punto equivale a 0,20€, el jefe quiere un listado de clientes (customers) con su
+nombre, apellido, puntos y una columna llamada “Cheque regalo” que contendrá el importe
+en euros del equivalente a sus puntos, ordenado de mayor cuantía (€) a menos.
+
+
+
+SELECT first_name, last_name, points, points * 0.20 AS "Cheque_regalo_(€)"
+FROM customers
+ORDER BY points*0.20 DESC;
+
+
+-- 17.  Lo mismo que el anterior, pero solo quiere ver los 3 primeros.
+
+SELECT first_name, last_name, points, points * 0.20 AS "Cheque_regalo_(€)"
+FROM customers
+ORDER BY points*0.20 DESC
+LIMIT 3;
+
+-- 18. De la tabla órdenes, obtener id y fecha de la orden, nombre, apellido del comprador/a y
+nombre del transportista en caso de haberse enviado la orden.
+
+SELECT o.order_id, c.first_name, c.last_name, s.name
+FROM orders o
+LEFT JOIN customers c ON o.customer_id = c.customer_id
+LEFT JOIN shippers s ON o.shipper_id = s.shipper_id;
+
+-- 19. De todos los pagos (payments) quiero saber la fecha de pago, número de factura
+(invoices), cantidad pagada, nombre y estado del que ha pagado (clients) y el nombre del
+método de pago (payment_methods) con el que ha realizado el pago, en orden, de
+manera que vea el último pago realizado el primero de la lista. Se debe de usar USING en
+las JOINS explícitas que corresponda.
+
+
+SELECT p.date AS "Fecha de pago",p.invoice_id AS "Número de factura", p.amount AS "Cantidad pagada",
+    c.name AS "Nombre del cliente", c.state AS "Estado del cliente",pm.name AS "Nombre del método de pago"
+FROM payments p
+LEFT JOIN invoices i USING (invoice_id)
+LEFT JOIN clients c ON c.client_id=i.client_id
+LEFT JOIN payment_methods pm ON p.payment_method= pm.name
+ORDER BY p.date DESC;
+
+--20. Quiero obtener la siguiente información: de la tabla de facturas (invoices) quiero ver el
+id, fecha de factura, total y una columna más que creamos para la ocasión ;) llamada “pago”
+cuyo valor será “PAGO PARCIAL” si existe fecha de pago o “SIN COBRAR” si no existe
+fecha de pago.
+
+SELECT invoice_id, invoice_date AS "Fecha de factura", payment_total,
+    IFNULL('PAGO PARCIAL', 'SIN COBRAR') AS pago
+FROM invoices;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
